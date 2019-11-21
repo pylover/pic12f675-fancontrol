@@ -77,7 +77,7 @@ void max7219_init() {
     // disable test mode. datasheet table 10
     set_register(MAX7219_DISPLAYTEST_REG, MAX7219_OFF);
     // set medium intensity. datasheet table 7
-    set_register(MAX7219_INTENSITY_REG, 0x8);
+    set_register(MAX7219_INTENSITY_REG, 0x3);
     // turn on display. datasheet table 3
     set_register(MAX7219_SHUTDOWN_REG, MAX7219_ON);
     // drive 8 digits. datasheet table 8
