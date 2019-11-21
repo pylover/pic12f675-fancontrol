@@ -20,51 +20,95 @@
 #include "max7219.c"
 
 #define FAN GP5
+#define FT  900 
+#define HT  600 
+#define LT  550
+#define RANGE   (FT - LT)
 
-static int adcvalue = 0;
+static unsigned short adcvalue = 0;
 static unsigned char duty = 0;
+static int fanstatus = 0;
 
 
 void interrupt isr(void) {
     if (ADIF) {
-        adcvalue = (ADRESH << 8) + ADRESL;
+        adcvalue = (unsigned short)(ADRESH << 8);
+        adcvalue += ADRESL;
         ADIF = 0;
     } 
-    if (T0IF) {
+    
+    if ((fanstatus == 1) && T0IF) {
         if (FAN) {
             TMR0 = duty;
             FAN = 0;
         }
-        else if (duty > 5) {
-            TMR0 = 0xff - duty;
+        else if (duty > 10) {
+            TMR0 = (unsigned char)(0xff - duty);
             FAN = 1;
         }
         T0IF = 0;
     }
 }
 
+void fanfull() {
+    T0IE = 0;
+    T0IF = 0;
+    FAN = 1;
+    fanstatus = 2;
+}
+
+void fanon() {
+    T0IF = 0;
+    T0IE = 1;
+    fanstatus = 1;
+}
+
+void fanoff() {
+    T0IE = 0;
+    FAN = 0;
+    fanstatus = 0;
+}
+
 
 int main() {
     TRISIO = 0b00000100;        // GP2: IN 
-    OPTION_REG = 0b11010001;
-    ANSEL = 0b00010100;         // GP2->AN2
+    OPTION_REG = 0b11010011;
+    ANSEL = 0b00110100;         // GP2->AN2
     ADCON0 = 0b10001001;        // ADON, AN2, VDD
     CMCON = 0b00000111;
     GIE = 1;
     ADIE = 1;
     PEIE = 1;
     ADIF = 0;
-    T0IE = 1;
     TMR0 = 0;
-    T0IF = 0;
-    
+    fanoff();
     max7219_init();
     GO_nDONE = 1;   // ADC enable
-    while(1) {
-        duty = adcvalue / 4; 
-        display(duty, 3);
+    long d = 0; 
+    while (1) {
+        if ((fanstatus == 0) && (adcvalue >= HT)) {
+            fanon();
+        }
+        else if ((fanstatus == 1) && (adcvalue >= FT)) {
+            fanfull();
+        }
+        else if ((fanstatus == 2) && (adcvalue < FT)) {
+            fanon();
+        }
+        else if ((fanstatus != 0) && adcvalue < LT) {
+            fanoff();
+        }
+        
+        // TODO: ENUM
+        if (fanstatus == 1) {
+            d = adcvalue - LT;
+            d *= 0xff;
+            d /= RANGE;
+            duty = (unsigned short)d;
+        }
+        display(adcvalue, 4);
         GO_nDONE = 1;   // ADC enable
-        _delay(1000000);
+        _delay(500000);
     }
     return 0;
 }
