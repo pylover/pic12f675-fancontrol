@@ -19,10 +19,13 @@
 #include <xc.h>
 #include "max7219.c"
 
+// R2: 47000
+// lambda r: ((5/(r+R2)) * R2) * 1024 / 5
 #define FAN GP5
-#define FT  900 
-#define HT  600 
-#define LT  550
+#define FT  936   // 86°   44K
+#define HT  829   // 60°   11K
+#define LT  718   // 45°   20K 
+
 #define RANGE   (FT - LT)
 
 static unsigned short adcvalue = 0;
