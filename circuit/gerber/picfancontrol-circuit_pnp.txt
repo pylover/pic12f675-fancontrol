@@ -1,0 +1,38 @@
+*Pick And Place List
+*Company=
+*Author=
+*eMail=
+*
+*Project=picfancontrol-circuit
+*Date=07:03:15
+*CreatedBy=Fritzing 0.9.3b.04.19.5c895d327c44a3114e5fcc9d8260daf0cbb52806
+*
+*
+*Coordinates in mm, always center of component
+*Origin 0/0=Lower left corner of PCB
+*Rotation in degree (0-360, math. pos.)
+*
+*No;Value;Package;X;Y;Rotation;Side;Name
+1;;;45.1572;-13.7207;0;Bottom;Hole1
+2;;;12.0777;-10.4313;0;Bottom;Copper Fill8
+3;47k;THT;36.2672;-8.64066;90;Bottom;R3
+4;;;35.3568;-13.746;0;Bottom;Copper Fill9
+5;;;41.3512;-3.5733;0;Bottom;Copper Fill6
+6;;;4.5212;-12.5903;0;Bottom;Copper Fill3
+7;;THT;3.2472;-11.1807;-90;Bottom;12V
+8;100nF;100 mil [THT, multilayer];12.1372;-12.4554;90;Bottom;C1
+9;;THT;45.1572;-2.29066;90;Bottom;NTC2
+10;47k;THT;38.8072;-8.64066;90;Bottom;R4
+11;;;36.2712;-4.8687;0;Bottom;Copper Fill4
+12;5V;to-92;8.4161;-12.4506;-90;Bottom;IC1
+13;;;2.794;-2.2271;0;Bottom;Copper Fill7
+14;;THT;1.9772;-4.83066;0;Bottom;Fan
+15;;;6.2992;-14.2921;0;Bottom;Copper Fill1
+16;2.2k;THT;18.4872;-8.64066;-90;Bottom;R1
+17;;DIP (Dual Inline) [THT];28.6472;-7.37066;0;Bottom;U1
+18;;;24.2062;-8.3485;0;Bottom;Copper Fill5
+19;;;38.7477;-12.9205;0;Bottom;Copper Fill11
+20;;DPak [SMD];10.6272;-4.83066;-90;Bottom;Q1
+21;;;33.6677;-12.0569;0;Bottom;Copper Fill10
+22;;THT;45.1572;-6.10066;90;Bottom;NTC1
+23;;;44.6278;-12.6665;0;Bottom;Copper Fill2

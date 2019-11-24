@@ -20,9 +20,9 @@
 #include "max7219.c"
 
 #define FAN GP5
-#define FT  90 
-#define HT  60 
-#define LT  55
+#define FT  900 
+#define HT  600 
+#define LT  550
 #define RANGE   (FT - LT)
 
 static unsigned short adcvalue = 0;
@@ -34,7 +34,7 @@ void interrupt isr(void) {
     if (ADIF) {
         adcvalue = (unsigned short)(ADRESH << 8);
         adcvalue += ADRESL;
-        adcvalue /= 10;
+        //adcvalue /= 10;
         ADIF = 0;
     } 
     
@@ -75,8 +75,10 @@ int main() {
     TRISIO = 0b00000100;        // GP2: IN 
     OPTION_REG = 0b11010011;
     ANSEL = 0b00110100;         // GP2->AN2
-    ADCON0 = 0b10001001;        // ADON, AN2, VDD
     CMCON = 0b00000111;
+    ADCON0 = 0b10001001;        // ADON, AN2, VDD
+    VRCON = 0b00000000;
+
     GIE = 1;
     ADIE = 1;
     PEIE = 1;
@@ -107,9 +109,9 @@ int main() {
             d /= RANGE;
             duty = (unsigned short)d;
         }
-        display(adcvalue * 10, 1);
+        display(adcvalue, 7);
         GO_nDONE = 1;   // ADC enable
-        _delay(500000);
+        _delay(100000);
     }
     return 0;
 }
