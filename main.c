@@ -16,17 +16,24 @@
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
 
+#define DISPLAY
+
 #include <xc.h>
+
+#ifdef DISPLAY
 #include "max7219.c"
+#endif
+
+
 
 // R2: 47000
 // lambda r: ((5/(r+R2)) * R2) * 1024 / 5
 #define FAN GP5
-#define FT  936   // 86°   44K
+#define FT  936   // 86°   4.3K
 #define HT  829   // 60°   11K
-#define LT  718   // 45°   20K 
-
+#define LT  548   // 25°   50K 
 #define RANGE   (FT - LT)
+
 
 static unsigned short adcvalue = 0;
 static unsigned char duty = 0;
@@ -88,7 +95,11 @@ int main() {
     ADIF = 0;
     TMR0 = 0;
     fanoff();
+
+#ifdef DISPLAY
     max7219_init();
+#endif
+
     GO_nDONE = 1;   // ADC enable
     long d = 0; 
     while (1) {
@@ -112,7 +123,11 @@ int main() {
             d /= RANGE;
             duty = (unsigned short)d;
         }
+
+#ifdef DISPLAY
         display(adcvalue, 7);
+#endif
+
         GO_nDONE = 1;   // ADC enable
         _delay(100000);
     }
