@@ -16,13 +16,8 @@
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
 
-#define DISPLAY
-
 #include <xc.h>
 
-#ifdef DISPLAY
-#include "max7219.c"
-#endif
 
 /*
  °C       Ohm     | °C        Ohm    |  °C        Ohm    
@@ -139,10 +134,6 @@ int main() {
     TMR0 = 0;
     fanoff();
 
-#ifdef DISPLAY
-    max7219_init();
-#endif
-
     GO_nDONE = 1;   // ADC enable
     long d = 0; 
     while (1) {
@@ -166,10 +157,6 @@ int main() {
             d /= RANGE;
             duty = (unsigned short)d;
         }
-
-#ifdef DISPLAY
-        display(adcvalue, 7);
-#endif
 
         GO_nDONE = 1;   // ADC enable
         _delay(100000);

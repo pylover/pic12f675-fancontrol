@@ -9,7 +9,7 @@ SERIALPORT = /dev/ttyUSB0
 PGARGS = --quiet --pic-serial-port $(SERIALPORT)
 
 
-main.hex: main.c max7219.c
+main.hex: main.c
 	$(CC) $(CCARGS) -moscval=$(OSCCAL) -mcpu=$(CHIP) -o $(DIST)/main.hex main.c
 
 
