@@ -4,7 +4,7 @@ CHIP = 12f675
 PG = ardpicprog
 DIST = ./out
 OSCCAL = FF 
-CCARGS = -ansi -mc90lib -Os -fasmfile -fshort-float -mno-osccal
+CCARGS = -ansi -mc90lib -O2 -fasmfile -fshort-float -mno-osccal
 SERIALPORT = /dev/ttyUSB0
 PGARGS = --quiet --pic-serial-port $(SERIALPORT)
 

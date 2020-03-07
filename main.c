@@ -71,21 +71,47 @@
 #define HT  829   // 60°   11K
 #define LT  548   // 25°   50K 
 #define RANGE   (FT - LT)
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 
-static unsigned short adcvalue = 0;
+#define DUAL_SENSOR
+
+
+#ifdef DUAL_SENSOR
+static unsigned short adcvalue_gp4 = 0;
+#endif
+
+static unsigned short adcvalue_gp2 = 0;
 static unsigned char duty = 0;
 static int fanstatus = 0;
 
 
+void setadcvalue(unsigned short v) {
+#ifdef DUAL_SENSOR
+    if (CHS0) {
+        adcvalue_gp4 = v;
+    }
+    else {
+        adcvalue_gp2 = v;
+    }
+#else
+    adcvalue_gp2 = v;
+#endif
+}
+
 void interrupt isr(void) {
+    unsigned short adcvalue;
     if (ADIF) {
         adcvalue = (unsigned short)(ADRESH << 8);
         adcvalue += ADRESL;
-        //adcvalue /= 10;
+        setadcvalue(adcvalue);
+#ifdef DUAL_SENSOR
+        CHS0 = !CHS0;
+#endif
         ADIF = 0;
     } 
     
+    // PWM Generation
     if ((fanstatus == 1) && T0IF) {
         if (FAN) {
             TMR0 = duty;
@@ -120,9 +146,16 @@ void fanoff() {
 
 
 int main() {
-    TRISIO = 0b00000100;        // GP2: IN 
-    OPTION_REG = 0b11010011;
+
+#ifdef DUAL_SENSOR
+    TRISIO = 0b00010100;        // GP2: IN, GP4: IN
+    ANSEL = 0b00111100;         // GP2->AN2, GP4->AN3
+#else
+    TRISIO = 0b00000100;        // GP2: IN
     ANSEL = 0b00110100;         // GP2->AN2
+#endif
+
+    OPTION_REG = 0b11010011;
     CMCON = 0b00000111;
     ADCON0 = 0b10001001;        // ADON, AN2, VDD
     VRCON = 0b00000000;
@@ -136,7 +169,15 @@ int main() {
 
     GO_nDONE = 1;   // ADC enable
     long d = 0; 
+    unsigned short adcvalue;
     while (1) {
+
+#ifdef DUAL_SENSOR
+        adcvalue = MAX(adcvalue_gp2, adcvalue_gp4);
+#else
+        adcvalue = adcvalue_gp2;
+#endif
+
         if ((fanstatus == 0) && (adcvalue >= HT)) {
             fanon();
         }
@@ -157,7 +198,7 @@ int main() {
             d /= RANGE;
             duty = (unsigned short)d;
         }
-
+        
         GO_nDONE = 1;   // ADC enable
         _delay(100000);
     }
