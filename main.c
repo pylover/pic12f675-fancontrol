@@ -19,6 +19,19 @@
 #include <xc.h>
 
 
+// R2: 47000
+// lambda r: ((5/(r+R2)) * R2) * 1024 / 5
+#define FAN GP5
+#define FT  883   // 70°   7.5K
+#define HT  677   // 40°   24K
+#define LT  566   // 30°   38K 
+#define RANGE   (FT - LT)
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+
+#define DUAL_SENSOR
+
+
 /*
  °C       Ohm     | °C        Ohm    |  °C        Ohm    
 -39.44    1956240 | 02.78     151235 |  45.00      20651
@@ -63,18 +76,6 @@
   
 */
 
-
-// R2: 47000
-// lambda r: ((5/(r+R2)) * R2) * 1024 / 5
-#define FAN GP5
-#define FT  936   // 86°   4.3K
-#define HT  829   // 60°   11K
-#define LT  548   // 25°   50K 
-#define RANGE   (FT - LT)
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-
-
-#define DUAL_SENSOR
 
 
 #ifdef DUAL_SENSOR
