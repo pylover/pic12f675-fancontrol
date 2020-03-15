@@ -146,6 +146,41 @@ void fanoff() {
 }
 
 
+void post() {
+    unsigned short counter = 0;
+    
+    // Dancing
+    counter = 2; 
+    while (counter > 0) {
+        counter--;
+        
+        fanfull();
+        _delay(13000);
+        fanoff();
+        _delay(900000);
+    }
+
+    // PWM test: Raise 
+    counter = 255;  // Seconds
+    fanon(); 
+    while (counter > 0) {
+        duty = 255 - counter;
+        counter--;
+        _delay(40000);
+    }
+
+    // Full speed test
+    counter = 9;  // Seconds
+    fanfull(); 
+    while (counter > 0) {
+        counter--;
+        _delay(1000000);
+    }
+    fanoff();
+
+}
+
+
 int main() {
 
 #ifdef DUAL_SENSOR
@@ -166,7 +201,9 @@ int main() {
     PEIE = 1;
     ADIF = 0;
     TMR0 = 0;
-    fanoff();
+    
+    // Power on self test
+    post();
 
     GO_nDONE = 1;   // ADC enable
     long d = 0; 
