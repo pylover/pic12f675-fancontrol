@@ -120,6 +120,11 @@
 */
 
 
+enum {
+    FANOFF,
+    FANPWM,
+    FANFULL,
+};
 
 #ifdef DUAL_SENSOR
 static unsigned short adcvalue_gp4 = 0;
@@ -127,7 +132,7 @@ static unsigned short adcvalue_gp4 = 0;
 
 static unsigned short adcvalue_gp2 = 0;
 static unsigned char duty = 0;
-static int fanstatus = 0;
+static int fanstatus = FANOFF;
 
 
 void setadcvalue(unsigned short v) {
@@ -156,7 +161,7 @@ void interrupt isr(void) {
     } 
     
     // PWM Generation
-    if ((fanstatus == 1) && T0IF) {
+    if ((fanstatus == FANPWM) && T0IF) {
         if (FAN) {
             TMR0 = duty;
             FAN = 0;
@@ -173,19 +178,19 @@ void fanfull() {
     T0IE = 0;
     T0IF = 0;
     FAN = 1;
-    fanstatus = 2;
+    fanstatus = FANFULL;
 }
 
 void fanon() {
     T0IF = 0;
     T0IE = 1;
-    fanstatus = 1;
+    fanstatus = FANPWM;
 }
 
 void fanoff() {
     T0IE = 0;
     FAN = 0;
-    fanstatus = 0;
+    fanstatus = FANOFF;
 }
 
 
@@ -259,21 +264,21 @@ int main() {
         adcvalue = adcvalue_gp2;
 #endif
 
-        if ((fanstatus == 0) && (adcvalue >= HT)) {
+        if ((fanstatus == FANOFF) && (adcvalue >= HT)) {
             fanon();
         }
-        else if ((fanstatus == 1) && (adcvalue >= FT)) {
+        else if ((fanstatus == FANPWM) && (adcvalue >= FT)) {
             fanfull();
         }
-        else if ((fanstatus == 2) && (adcvalue < FT)) {
+        else if ((fanstatus == FANFULL) && (adcvalue < FT)) {
             fanon();
         }
-        else if ((fanstatus != 0) && adcvalue < LT) {
+        else if ((fanstatus != FANOFF) && adcvalue < LT) {
             fanoff();
         }
         
         // TODO: ENUM
-        if (fanstatus == 1) {
+        if (fanstatus == FANPWM) {
             d = adcvalue - LT;
             d *= 0xff;
             d /= RANGE;
