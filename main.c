@@ -30,6 +30,8 @@
 
 #ifdef DEFERRED
 #define DEFERRED_TEMP   677   // 40°   24K
+#else
+#define OFF_TEMP        (MIN_TEMP - 20)
 #endif
 
 
@@ -293,7 +295,7 @@ int main() {
         else if (adcvalue >= MIN_TEMP) {
             fanpwm();
         }
-        else {
+        else if (adcvalue < OFF_TEMP) {
             fanoff();
         }
 #endif
