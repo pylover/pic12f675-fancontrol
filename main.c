@@ -19,7 +19,7 @@
 #include <xc.h>
 
 
-#define DUAL_SENSOR
+//#define DUAL_SENSOR
 #define DELAYED
 
 #define MIN_DUTY            70
@@ -31,15 +31,12 @@
 #endif
 
 /*
-R2 = 47000
-f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
+k = lambda x: x * 1000
+R2 = k(100)
+f = lambda r: ((5/(r+R2)) * R2) * 1024 / 5
 */
-//#define MAX_TEMP        883   // 70°   7.5K
-#define MAX_TEMP        920   // 80°   5.3K
-#define MIN_TEMP        718   // 45°   20K
-//#define MIN_TEMP        677   // 40°   24K
-//#define MIN_TEMP        566   // 30°   38K 
-//#define MIN_TEMP        617   // 35°   31K 
+#define MAX_TEMP        806   // 55°   27K    3.93 V
+#define MIN_TEMP        578   // 30°   77K    2.82 V
 
 
 #define FAN GP5
