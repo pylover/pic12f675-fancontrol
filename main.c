@@ -19,17 +19,25 @@
 #include <xc.h>
 
 
+#define DUAL_SENSOR
+#define DEFERRED
+
+
 // R2: 47000
 // lambda r: ((5/(r+R2)) * R2) * 1024 / 5
+#define MAX_TEMP        883   // 70°   7.5K
+#define MIN_TEMP        566   // 30°   38K 
+
+#ifdef DEFERRED
+#define DEFERRED_TEMP   677   // 40°   24K
+#endif
+
+
 #define FAN GP5
-#define FT  883   // 70°   7.5K
-#define HT  677   // 40°   24K
-#define LT  566   // 30°   38K 
-#define RANGE   (FT - LT)
+#define RANGE   (MAX_TEMP - MIN_TEMP)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 
-#define DUAL_SENSOR
 
 
 /*
@@ -264,22 +272,35 @@ int main() {
         adcvalue = adcvalue_gp2;
 #endif
 
-        if ((fanstatus == FANOFF) && (adcvalue >= HT)) {
+#ifdef DEFERRED
+        if ((fanstatus == FANOFF) && (adcvalue >= DEFERRED_TEMP)) {
             fanpwm();
         }
-        else if ((fanstatus == FANPWM) && (adcvalue >= FT)) {
+        else if ((fanstatus == FANPWM) && (adcvalue >= MAX_TEMP)) {
             fanfull();
         }
-        else if ((fanstatus == FANFULL) && (adcvalue < FT)) {
+        else if ((fanstatus == FANFULL) && (adcvalue < MAX_TEMP)) {
             fanpwm();
         }
-        else if ((fanstatus != FANOFF) && adcvalue < LT) {
+        else if ((fanstatus != FANOFF) && adcvalue < MIN_TEMP) {
             fanoff();
         }
+#else
+        
+        if (adcvalue >= MAX_TEMP) {
+            fanfull();
+        }
+        else if (adcvalue >= MIN_TEMP) {
+            fanpwm();
+        }
+        else {
+            fanoff();
+        }
+#endif
         
         // TODO: ENUM
         if (fanstatus == FANPWM) {
-            d = adcvalue - LT;
+            d = adcvalue - MIN_TEMP;
             d *= 0xff;
             d /= RANGE;
             duty = (unsigned short)d;
