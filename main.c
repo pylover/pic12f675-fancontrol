@@ -181,7 +181,7 @@ void fanfull() {
     fanstatus = FANFULL;
 }
 
-void fanon() {
+void fanpwm() {
     T0IF = 0;
     T0IE = 1;
     fanstatus = FANPWM;
@@ -210,7 +210,7 @@ void post() {
 
     // PWM test: Raise 
     counter = 255;  // Seconds
-    fanon(); 
+    fanpwm(); 
     while (counter > 0) {
         duty = 255 - counter;
         counter--;
@@ -265,13 +265,13 @@ int main() {
 #endif
 
         if ((fanstatus == FANOFF) && (adcvalue >= HT)) {
-            fanon();
+            fanpwm();
         }
         else if ((fanstatus == FANPWM) && (adcvalue >= FT)) {
             fanfull();
         }
         else if ((fanstatus == FANFULL) && (adcvalue < FT)) {
-            fanon();
+            fanpwm();
         }
         else if ((fanstatus != FANOFF) && adcvalue < LT) {
             fanoff();
