@@ -22,12 +22,12 @@
 #define DUAL_SENSOR
 #define DELAYED
 
-#define MIN_DUTY            20
-#define SAMPLE_INTERVAL     200000
+#define MIN_DUTY            70
+#define SAMPLE_INTERVAL     300000
 
 #ifdef DELAYED
-#define LIMIT_DOWNCOUNTER    -30 
 #define LIMIT_UPCOUNTER       10
+#define LIMIT_DOWNCOUNTER    -30 
 #endif
 
 /*
