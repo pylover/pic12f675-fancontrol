@@ -21,25 +21,232 @@
 
 #define DUAL_SENSOR
 #define DEFERRED
+#define DELAYED
+
+#define MIN_DUTY            100
+#define SAMPLE_INTERVAL     500000
+
+#ifdef DELAYED
+#define MAX_DOWNCOUNTER     20
+#endif
 
 /*
 R2 = 47000
 f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
 */
 #define MAX_TEMP        883   // 70°   7.5K
+//#define MIN_TEMP        718   // 45°   20K
+#define MIN_TEMP        677   // 40°   24K
 //#define MIN_TEMP        566   // 30°   38K 
-#define MIN_TEMP        617   // 35°   31K 
+//#define MIN_TEMP        617   // 35°   31K 
 
 #ifdef DEFERRED
-#define DEFERRED_TEMP   677   // 40°   24K
-#else
-#define OFF_TEMP        (MIN_TEMP - 20)
+#define DEFERRED_TEMP   718   // 45°   20K
 #endif
 
 
 #define FAN GP5
 #define RANGE   (MAX_TEMP - MIN_TEMP)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+
+enum {
+    FANOFF,
+    FANPWM,
+    FANFULL,
+};
+
+#ifdef DELAYED
+static unsigned short downcounter = 0;
+#endif
+
+#ifdef DUAL_SENSOR
+static unsigned short adcvalue_gp4 = 0;
+#endif
+
+static unsigned short adcvalue_gp2 = 0;
+static unsigned char duty = 0;
+static int fanstatus = FANOFF;
+
+
+void setadcvalue(unsigned short v) {
+#ifdef DUAL_SENSOR
+    if (CHS0) {
+        adcvalue_gp4 = v;
+    }
+    else {
+        adcvalue_gp2 = v;
+    }
+#else
+    adcvalue_gp2 = v;
+#endif
+}
+
+void interrupt isr(void) {
+    unsigned short adcvalue;
+    if (ADIF) {
+        adcvalue = (unsigned short)(ADRESH << 8);
+        adcvalue += ADRESL;
+        setadcvalue(adcvalue);
+#ifdef DUAL_SENSOR
+        CHS0 = !CHS0;
+#endif
+        ADIF = 0;
+    } 
+    
+    // PWM Generation
+    if ((fanstatus == FANPWM) && T0IF) {
+        if (FAN) {
+            TMR0 = duty;
+            FAN = 0;
+        }
+        else if (duty > 10) {
+            TMR0 = (unsigned char)(0xff - duty);
+            FAN = 1;
+        }
+        T0IF = 0;
+    }
+}
+
+void fanfull() {
+    downcounter = 0;
+    T0IE = 0;
+    T0IF = 0;
+    FAN = 1;
+    fanstatus = FANFULL;
+}
+
+void fanpwm() {
+    downcounter = 0;
+    T0IF = 0;
+    T0IE = 1;
+    fanstatus = FANPWM;
+}
+
+void fanoff() {
+
+#ifdef DELAYED
+    downcounter++;
+    if (downcounter < MAX_DOWNCOUNTER) {
+        return;
+    }
+    downcounter = 0;
+#endif
+
+    T0IE = 0;
+    FAN = 0;
+    fanstatus = FANOFF;
+}
+
+
+void post() {
+    unsigned short counter = 0;
+    
+    // Dancing
+    counter = 2; 
+    while (counter > 0) {
+        counter--;
+        
+        fanfull();
+        _delay(13000);
+        fanoff();
+        _delay(900000);
+    }
+
+    // PWM test: Raise 
+    counter = 255;  // Seconds
+    fanpwm(); 
+    while (counter > 0) {
+        duty = 255 - counter;
+        counter--;
+        _delay(40000);
+    }
+
+    // Full speed test
+    counter = 9;  // Seconds
+    fanfull(); 
+    while (counter > 0) {
+        counter--;
+        _delay(1000000);
+    }
+    fanoff();
+
+}
+
+
+int main() {
+
+#ifdef DUAL_SENSOR
+    TRISIO = 0b00010100;        // GP2: IN, GP4: IN
+    ANSEL = 0b00111100;         // GP2->AN2, GP4->AN3
+#else
+    TRISIO = 0b00000100;        // GP2: IN
+    ANSEL = 0b00110100;         // GP2->AN2
+#endif
+
+    OPTION_REG = 0b11010011;
+    CMCON = 0b00000111;
+    ADCON0 = 0b10001001;        // ADON, AN2, VDD
+    VRCON = 0b00000000;
+
+    GIE = 1;
+    ADIE = 1;
+    PEIE = 1;
+    ADIF = 0;
+    TMR0 = 0;
+    
+    // Power on self test
+    post();
+    GO_nDONE = 1;   // ADC enable
+    long d = 0; 
+    unsigned short adcvalue;
+    while (1) {
+
+#ifdef DUAL_SENSOR
+        adcvalue = MAX(adcvalue_gp2, adcvalue_gp4);
+#else
+        adcvalue = adcvalue_gp2;
+#endif
+
+#ifdef DEFERRED
+        if ((fanstatus == FANOFF) && (adcvalue >= DEFERRED_TEMP)) {
+            fanpwm();
+        }
+        else if ((fanstatus == FANPWM) && (adcvalue >= MAX_TEMP)) {
+            fanfull();
+        }
+        else if ((fanstatus == FANFULL) && (adcvalue < MAX_TEMP)) {
+            fanpwm();
+        }
+        else if ((fanstatus != FANOFF) && adcvalue < MIN_TEMP) {
+            fanoff();
+        }
+#else
+        
+        if (adcvalue >= MAX_TEMP) {
+            fanfull();
+        }
+        else if (adcvalue >= MIN_TEMP) {
+            fanpwm();
+        }
+        else if (adcvalue < MIN_TEMP) {
+            fanoff();
+        }
+#endif
+        
+        if (fanstatus == FANPWM) {
+            d = adcvalue - MIN_TEMP;
+            d *= 0xff;
+            d /= RANGE;
+            d = MAX(d, MIN_DUTY);
+            duty = (unsigned short)d;
+        }
+        
+        GO_nDONE = 1;   // ADC enable
+        _delay(SAMPLE_INTERVAL);
+    }
+    return 0;
+}
 
 
 
@@ -132,185 +339,3 @@ f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
 */
 
 
-enum {
-    FANOFF,
-    FANPWM,
-    FANFULL,
-};
-
-#ifdef DUAL_SENSOR
-static unsigned short adcvalue_gp4 = 0;
-#endif
-
-static unsigned short adcvalue_gp2 = 0;
-static unsigned char duty = 0;
-static int fanstatus = FANOFF;
-
-
-void setadcvalue(unsigned short v) {
-#ifdef DUAL_SENSOR
-    if (CHS0) {
-        adcvalue_gp4 = v;
-    }
-    else {
-        adcvalue_gp2 = v;
-    }
-#else
-    adcvalue_gp2 = v;
-#endif
-}
-
-void interrupt isr(void) {
-    unsigned short adcvalue;
-    if (ADIF) {
-        adcvalue = (unsigned short)(ADRESH << 8);
-        adcvalue += ADRESL;
-        setadcvalue(adcvalue);
-#ifdef DUAL_SENSOR
-        CHS0 = !CHS0;
-#endif
-        ADIF = 0;
-    } 
-    
-    // PWM Generation
-    if ((fanstatus == FANPWM) && T0IF) {
-        if (FAN) {
-            TMR0 = duty;
-            FAN = 0;
-        }
-        else if (duty > 10) {
-            TMR0 = (unsigned char)(0xff - duty);
-            FAN = 1;
-        }
-        T0IF = 0;
-    }
-}
-
-void fanfull() {
-    T0IE = 0;
-    T0IF = 0;
-    FAN = 1;
-    fanstatus = FANFULL;
-}
-
-void fanpwm() {
-    T0IF = 0;
-    T0IE = 1;
-    fanstatus = FANPWM;
-}
-
-void fanoff() {
-    T0IE = 0;
-    FAN = 0;
-    fanstatus = FANOFF;
-}
-
-
-void post() {
-    unsigned short counter = 0;
-    
-    // Dancing
-    counter = 2; 
-    while (counter > 0) {
-        counter--;
-        
-        fanfull();
-        _delay(13000);
-        fanoff();
-        _delay(900000);
-    }
-
-    // PWM test: Raise 
-    counter = 255;  // Seconds
-    fanpwm(); 
-    while (counter > 0) {
-        duty = 255 - counter;
-        counter--;
-        _delay(40000);
-    }
-
-    // Full speed test
-    counter = 9;  // Seconds
-    fanfull(); 
-    while (counter > 0) {
-        counter--;
-        _delay(1000000);
-    }
-    fanoff();
-
-}
-
-
-int main() {
-
-#ifdef DUAL_SENSOR
-    TRISIO = 0b00010100;        // GP2: IN, GP4: IN
-    ANSEL = 0b00111100;         // GP2->AN2, GP4->AN3
-#else
-    TRISIO = 0b00000100;        // GP2: IN
-    ANSEL = 0b00110100;         // GP2->AN2
-#endif
-
-    OPTION_REG = 0b11010011;
-    CMCON = 0b00000111;
-    ADCON0 = 0b10001001;        // ADON, AN2, VDD
-    VRCON = 0b00000000;
-
-    GIE = 1;
-    ADIE = 1;
-    PEIE = 1;
-    ADIF = 0;
-    TMR0 = 0;
-    
-    // Power on self test
-    post();
-
-    GO_nDONE = 1;   // ADC enable
-    long d = 0; 
-    unsigned short adcvalue;
-    while (1) {
-
-#ifdef DUAL_SENSOR
-        adcvalue = MAX(adcvalue_gp2, adcvalue_gp4);
-#else
-        adcvalue = adcvalue_gp2;
-#endif
-
-#ifdef DEFERRED
-        if ((fanstatus == FANOFF) && (adcvalue >= DEFERRED_TEMP)) {
-            fanpwm();
-        }
-        else if ((fanstatus == FANPWM) && (adcvalue >= MAX_TEMP)) {
-            fanfull();
-        }
-        else if ((fanstatus == FANFULL) && (adcvalue < MAX_TEMP)) {
-            fanpwm();
-        }
-        else if ((fanstatus != FANOFF) && adcvalue < MIN_TEMP) {
-            fanoff();
-        }
-#else
-        
-        if (adcvalue >= MAX_TEMP) {
-            fanfull();
-        }
-        else if (adcvalue >= MIN_TEMP) {
-            fanpwm();
-        }
-        else if (adcvalue < OFF_TEMP) {
-            fanoff();
-        }
-#endif
-        
-        if (fanstatus == FANPWM) {
-            d = adcvalue - MIN_TEMP;
-            d *= 0xff;
-            d /= RANGE;
-            duty = (unsigned short)MAX(d, 60);
-        }
-        
-        GO_nDONE = 1;   // ADC enable
-        _delay(1000000);
-    }
-    return 0;
-}
