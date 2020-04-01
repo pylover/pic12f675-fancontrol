@@ -22,11 +22,13 @@
 #define DUAL_SENSOR
 #define DEFERRED
 
-
-// R2: 47000
-// lambda r: ((5/(r+R2)) * R2) * 1024 / 5
+/*
+R2 = 47000
+f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
+*/
 #define MAX_TEMP        883   // 70°   7.5K
-#define MIN_TEMP        566   // 30°   38K 
+//#define MIN_TEMP        566   // 30°   38K 
+#define MIN_TEMP        617   // 35°   31K 
 
 #ifdef DEFERRED
 #define DEFERRED_TEMP   677   // 40°   24K
@@ -300,16 +302,15 @@ int main() {
         }
 #endif
         
-        // TODO: ENUM
         if (fanstatus == FANPWM) {
             d = adcvalue - MIN_TEMP;
             d *= 0xff;
             d /= RANGE;
-            duty = (unsigned short)d;
+            duty = (unsigned short)MAX(d, 60);
         }
         
         GO_nDONE = 1;   // ADC enable
-        _delay(100000);
+        _delay(1000000);
     }
     return 0;
 }
