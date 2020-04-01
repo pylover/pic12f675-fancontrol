@@ -20,29 +20,26 @@
 
 
 #define DUAL_SENSOR
-#define DEFERRED
 #define DELAYED
 
-#define MIN_DUTY            100
-#define SAMPLE_INTERVAL     500000
+#define MIN_DUTY            20
+#define SAMPLE_INTERVAL     200000
 
 #ifdef DELAYED
-#define MAX_DOWNCOUNTER     20
+#define LIMIT_DOWNCOUNTER    -30 
+#define LIMIT_UPCOUNTER       10
 #endif
 
 /*
 R2 = 47000
 f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
 */
-#define MAX_TEMP        883   // 70°   7.5K
-//#define MIN_TEMP        718   // 45°   20K
-#define MIN_TEMP        677   // 40°   24K
+//#define MAX_TEMP        883   // 70°   7.5K
+#define MAX_TEMP        920   // 80°   5.3K
+#define MIN_TEMP        718   // 45°   20K
+//#define MIN_TEMP        677   // 40°   24K
 //#define MIN_TEMP        566   // 30°   38K 
 //#define MIN_TEMP        617   // 35°   31K 
-
-#ifdef DEFERRED
-#define DEFERRED_TEMP   718   // 45°   20K
-#endif
 
 
 #define FAN GP5
@@ -57,7 +54,7 @@ enum {
 };
 
 #ifdef DELAYED
-static unsigned short downcounter = 0;
+static short downcounter = 0;
 #endif
 
 #ifdef DUAL_SENSOR
@@ -117,7 +114,13 @@ void fanfull() {
 }
 
 void fanpwm() {
+#ifdef DELAYED
+    if (++downcounter < LIMIT_UPCOUNTER) {
+        return;
+    }
     downcounter = 0;
+#endif
+
     T0IF = 0;
     T0IE = 1;
     fanstatus = FANPWM;
@@ -126,8 +129,7 @@ void fanpwm() {
 void fanoff() {
 
 #ifdef DELAYED
-    downcounter++;
-    if (downcounter < MAX_DOWNCOUNTER) {
+    if (--downcounter > LIMIT_DOWNCOUNTER) {
         return;
     }
     downcounter = 0;
@@ -142,28 +144,17 @@ void fanoff() {
 void post() {
     unsigned short counter = 0;
     
-    // Dancing
-    counter = 2; 
-    while (counter > 0) {
-        counter--;
-        
-        fanfull();
-        _delay(13000);
-        fanoff();
-        _delay(900000);
-    }
-
     // PWM test: Raise 
     counter = 255;  // Seconds
     fanpwm(); 
     while (counter > 0) {
         duty = 255 - counter;
         counter--;
-        _delay(40000);
+        _delay(20000);
     }
 
     // Full speed test
-    counter = 9;  // Seconds
+    counter = 3;  // Seconds
     fanfull(); 
     while (counter > 0) {
         counter--;
@@ -208,21 +199,6 @@ int main() {
         adcvalue = adcvalue_gp2;
 #endif
 
-#ifdef DEFERRED
-        if ((fanstatus == FANOFF) && (adcvalue >= DEFERRED_TEMP)) {
-            fanpwm();
-        }
-        else if ((fanstatus == FANPWM) && (adcvalue >= MAX_TEMP)) {
-            fanfull();
-        }
-        else if ((fanstatus == FANFULL) && (adcvalue < MAX_TEMP)) {
-            fanpwm();
-        }
-        else if ((fanstatus != FANOFF) && adcvalue < MIN_TEMP) {
-            fanoff();
-        }
-#else
-        
         if (adcvalue >= MAX_TEMP) {
             fanfull();
         }
@@ -232,7 +208,6 @@ int main() {
         else if (adcvalue < MIN_TEMP) {
             fanoff();
         }
-#endif
         
         if (fanstatus == FANPWM) {
             d = adcvalue - MIN_TEMP;
