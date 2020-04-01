@@ -22,7 +22,7 @@
 //#define DUAL_SENSOR
 #define DELAYED
 
-#define MIN_DUTY            70
+#define MIN_DUTY            140
 #define SAMPLE_INTERVAL     300000
 
 #ifdef DELAYED
