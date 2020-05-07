@@ -10,12 +10,11 @@
 
 #define VCC         5
 #define R2          47000
-#define VOLTAGE(r)  ((VCC / (r+R2)) * R2 / VCC * 1024)
+#define VOLTAGE(r)  ((unsigned short)((VCC / (r+R2)) / VCC * R2 * 1024))
 
-#define MAX_TEMP        800 //VOLTAGE(NTC50K_70C)
-#define DEFERRED_TEMP   700 //VOLTAGE(NTC50K_50C)
-#define MIN_TEMP        600 //VOLTAGE(NTC50K_35C)
+#define RISK_TEMP  VOLTAGE(NTC50K_70C)
+#define HIGH_TEMP  VOLTAGE(NTC50K_50C)
+#define LOW_TEMP   VOLTAGE(NTC50K_30C)
 
-#define FAN GP5
 
 #endif

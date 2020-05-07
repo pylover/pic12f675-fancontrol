@@ -20,7 +20,8 @@
 #include "configuration.h"
 
 
-#define RANGE   (MAX_TEMP - MIN_TEMP)
+#define FAN GP5
+#define RANGE   (RISK_TEMP - LOW_TEMP)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 
@@ -85,15 +86,13 @@ void fanfull() {
     fanstatus = FANFULL;
 }
 
-void fanpwm() {
-
+void fanon() {
     T0IF = 0;
     T0IE = 1;
     fanstatus = FANPWM;
 }
 
 void fanoff() {
-
     T0IE = 0;
     FAN = 0;
     fanstatus = FANOFF;
@@ -103,17 +102,28 @@ void fanoff() {
 void post() {
     unsigned short counter = 0;
     
+    // Dancing
+    counter = 2; 
+    while (counter > 0) {
+        counter--;
+        
+        fanfull();
+        _delay(13000);
+        fanoff();
+        _delay(900000);
+    }
+
     // PWM test: Raise 
-    counter = 255;
-    fanpwm(); 
+    counter = 255;  // Seconds
+    fanon(); 
     while (counter > 0) {
         duty = 255 - counter;
         counter--;
-        _delay(20000);
+        _delay(40000);
     }
 
     // Full speed test
-    counter = 3;
+    counter = 9;  // Seconds
     fanfull(); 
     while (counter > 0) {
         counter--;
@@ -159,28 +169,29 @@ int main() {
         adcvalue = adcvalue_gp2;
 #endif
 
-        if ((fanstatus == FANOFF) && (adcvalue >= DEFERRED_TEMP)) {
-            fanpwm();
+        if ((fanstatus == FANOFF) && (adcvalue >= HIGH_TEMP)) {
+            fanon();
         }
-        else if ((fanstatus == FANPWM) && (adcvalue >= MAX_TEMP)) {
+        else if ((fanstatus == FANPWM) && (adcvalue >= RISK_TEMP)) {
             fanfull();
         }
-        else if ((fanstatus == FANFULL) && (adcvalue < MAX_TEMP)) {
-            fanpwm();
+        else if ((fanstatus == FANFULL) && (adcvalue < RISK_TEMP)) {
+            fanon();
         }
-        else if ((fanstatus != FANOFF) && adcvalue < MIN_TEMP) {
+        else if ((fanstatus != FANOFF) && adcvalue < LOW_TEMP) {
             fanoff();
         }
         
+        // TODO: ENUM
         if (fanstatus == FANPWM) {
-            d = adcvalue - MIN_TEMP;
+            d = adcvalue - LOW_TEMP;
             d *= 0xff;
             d /= RANGE;
-            duty = (unsigned short)MAX(d, MINDUTY);
+            duty = (unsigned short)d;
         }
         
         GO_nDONE = 1;   // ADC enable
-        _delay(SAMPLE_INTERVAL);
+        _delay(100000);
     }
     return 0;
 }
