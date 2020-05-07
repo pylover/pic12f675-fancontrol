@@ -20,7 +20,6 @@
 #include <xc.h>
 
 
-#define FAN GP5
 #define RANGE   (RISK_TEMP - LOW_TEMP)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -104,10 +103,10 @@ void fanoff() {
 
 void post() {
     unsigned short counter = 0;
-    
     _delay(1000000);
+
     // Report device ID
-    while (counter < INIT_DANCE) {
+    while (counter < POST_DANCE) {
         counter++;
         fanfull();
         _delay(12000);
@@ -117,18 +116,16 @@ void post() {
     _delay(1000000);
 
     // PWM test: Raise 
-    counter = MINDUTY; 
+    duty = MINDUTY; 
     fanpwm(); 
-    while (counter < 255) {
-        duty = counter++;
-        _delay(50000);
+    while (duty++ < 255) {
+        _delay(POST_PWM_STEPUP_INTERVAL);
     }
 
     // Full speed test
-    counter = 3;  // Seconds
+    counter = 0;  // Seconds
     fanfull(); 
-    while (counter > 0) {
-        counter--;
+    while (counter++ < POST_FULLSPEED_DURATION) {
         _delay(1000000);
     }
     fanoff();
@@ -192,7 +189,7 @@ int main() {
         }
         
         GO_nDONE = 1;   // ADC enable
-        _delay(100000);
+        _delay(SAMPLE_INTERVAL);
     }
     return 0;
 }
