@@ -17,34 +17,9 @@
 // Use project enums instead of #define for ON and OFF.
 
 #include <xc.h>
+#include "configuration.h"
 
 
-//#define DUAL_SENSOR
-#define DEFERRED
-#define MINDUTY        10
-
-///*
-//R2 = 47000
-//f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
-//*/
-//#define MAX_TEMP        883   // 70°   7.5K
-//#define MIN_TEMP        617   // 35°   31K 
-
-/*
-R2 = 100000
-f = lambda r, r2: ((5/(r+r2)) * r2) * 1024 / 5
-*/
-#define MAX_TEMP        942   // 86°   8.7K   
-#define MIN_TEMP        682   // 40°   50K   
-
-#ifdef DEFERRED
-#define DEFERRED_TEMP   710  
-#else
-#define OFF_TEMP        (MIN_TEMP - 20)
-#endif
-
-
-#define FAN GP5
 #define RANGE   (MAX_TEMP - MIN_TEMP)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -111,12 +86,14 @@ void fanfull() {
 }
 
 void fanpwm() {
+
     T0IF = 0;
     T0IE = 1;
     fanstatus = FANPWM;
 }
 
 void fanoff() {
+
     T0IE = 0;
     FAN = 0;
     fanstatus = FANOFF;
@@ -126,28 +103,17 @@ void fanoff() {
 void post() {
     unsigned short counter = 0;
     
-    // Dancing
-    counter = 2; 
-    while (counter > 0) {
-        counter--;
-        
-        fanfull();
-        _delay(13000);
-        fanoff();
-        _delay(900000);
-    }
-
     // PWM test: Raise 
-    counter = 255;  // Seconds
+    counter = 255;
     fanpwm(); 
     while (counter > 0) {
         duty = 255 - counter;
         counter--;
-        _delay(40000);
+        _delay(20000);
     }
 
     // Full speed test
-    counter = 9;  // Seconds
+    counter = 3;
     fanfull(); 
     while (counter > 0) {
         counter--;
@@ -193,7 +159,6 @@ int main() {
         adcvalue = adcvalue_gp2;
 #endif
 
-#ifdef DEFERRED
         if ((fanstatus == FANOFF) && (adcvalue >= DEFERRED_TEMP)) {
             fanpwm();
         }
@@ -206,18 +171,6 @@ int main() {
         else if ((fanstatus != FANOFF) && adcvalue < MIN_TEMP) {
             fanoff();
         }
-#else
-        
-        if (adcvalue >= MAX_TEMP) {
-            fanfull();
-        }
-        else if (adcvalue >= MIN_TEMP) {
-            fanpwm();
-        }
-        else if (adcvalue < OFF_TEMP) {
-            fanoff();
-        }
-#endif
         
         if (fanstatus == FANPWM) {
             d = adcvalue - MIN_TEMP;
@@ -227,7 +180,8 @@ int main() {
         }
         
         GO_nDONE = 1;   // ADC enable
-        _delay(1000000);
+        _delay(SAMPLE_INTERVAL);
     }
     return 0;
 }
+
