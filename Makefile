@@ -5,7 +5,8 @@ PG = ardpicprog
 DIST = ./out
 OSCCAL = FF 
 CCARGS = -ansi -mc90lib -O2 -fasmfile -fshort-float -mno-osccal
-SERIALPORT = /dev/ttyUSB0
+#SERIALPORT = /dev/ttyUSB0
+SERIALPORT = /dev/ttyACM0
 PGARGS = --quiet --pic-serial-port $(SERIALPORT)
 
 
