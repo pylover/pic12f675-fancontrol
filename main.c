@@ -16,8 +16,8 @@
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
 
-#include <xc.h>
 #include "configuration.h"
+#include <xc.h>
 
 
 #define FAN GP5
@@ -30,6 +30,7 @@ enum {
     FANPWM,
     FANFULL,
 };
+
 
 #ifdef DUAL_SENSOR
 static unsigned short adcvalue_gp4 = 0;
@@ -53,6 +54,7 @@ void setadcvalue(unsigned short v) {
 #endif
 }
 
+
 void interrupt isr(void) {
     unsigned short adcvalue;
     if (ADIF) {
@@ -71,13 +73,14 @@ void interrupt isr(void) {
             TMR0 = duty;
             FAN = 0;
         }
-        else if (duty > 10) {
+        else {
             TMR0 = (unsigned char)(0xff - duty);
             FAN = 1;
         }
         T0IF = 0;
     }
 }
+
 
 void fanfull() {
     T0IE = 0;
@@ -102,28 +105,27 @@ void fanoff() {
 void post() {
     unsigned short counter = 0;
     
-    // Dancing
-    counter = 2; 
-    while (counter > 0) {
-        counter--;
-        
+    _delay(1000000);
+    // Report device ID
+    while (counter < INIT_DANCE) {
+        counter++;
         fanfull();
-        _delay(13000);
+        _delay(12000);
         fanoff();
-        _delay(900000);
+        _delay(500000);
     }
+    _delay(1000000);
 
     // PWM test: Raise 
-    counter = 255;  // Seconds
+    counter = MINDUTY; 
     fanpwm(); 
-    while (counter > 0) {
-        duty = 255 - counter;
-        counter--;
-        _delay(40000);
+    while (counter < 255) {
+        duty = counter++;
+        _delay(50000);
     }
 
     // Full speed test
-    counter = 9;  // Seconds
+    counter = 3;  // Seconds
     fanfull(); 
     while (counter > 0) {
         counter--;
