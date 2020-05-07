@@ -6,9 +6,12 @@
 #define FAN GP5
 
 #define DUAL_SENSOR
-#define MINDUTY             30
 #define SAMPLE_INTERVAL     300000
 
+/* 
+ * Minimum allowed PWM duty cycle to prevent audible nise
+ */
+#define MINDUTY             30
 
 /* 
  * See ntc.h for available values 
