@@ -187,7 +187,7 @@ int main() {
             d = adcvalue - LOW_TEMP;
             d *= 0xff;
             d /= RANGE;
-            duty = (unsigned short)d;
+            duty = (unsigned short)MAX(d, MINDUTY);
         }
         
         GO_nDONE = 1;   // ADC enable
