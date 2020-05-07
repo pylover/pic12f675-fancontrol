@@ -19,7 +19,7 @@
 #include "configuration.h"
 #include <xc.h>
 
-
+#define SECOND  1000000
 #define RANGE   (RISK_TEMP - LOW_TEMP)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -103,7 +103,7 @@ void fanoff() {
 
 void post() {
     unsigned short counter = 0;
-    _delay(1000000);
+    _delay(SECOND);
 
     // Report device ID
     while (counter < POST_DANCE) {
@@ -113,12 +113,13 @@ void post() {
         fanoff();
         _delay(500000);
     }
-    _delay(1000000);
+    _delay(SECOND);
 
     // PWM test: Raise 
     duty = MINDUTY; 
     fanpwm(); 
-    while (duty++ < 255) {
+    while (duty < 0xFF) {
+        duty++;
         _delay(POST_PWM_STEPUP_INTERVAL);
     }
 
@@ -126,7 +127,7 @@ void post() {
     counter = 0;  // Seconds
     fanfull(); 
     while (counter++ < POST_FULLSPEED_DURATION) {
-        _delay(1000000);
+        _delay(SECOND);
     }
     fanoff();
 
