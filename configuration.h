@@ -18,7 +18,7 @@
  * Minimum allowed PWM duty cycle to prevent audible nise
  * 0-255
  */
-#define MINDUTY             30
+#define MINDUTY             20
 
 
 /* 
