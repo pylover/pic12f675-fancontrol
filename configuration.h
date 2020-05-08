@@ -11,12 +11,12 @@
 /* 
  * Minimum allowed PWM duty cycle to prevent audible nise
  */
-#define MINDUTY             30
+#define MINDUTY             5
 
 /* 
  * See ntc.h for available values 
  */
-#define RISK_TEMP       NTC100K_R100K_86C
+#define RISK_TEMP       NTC100K_R100K_100C
 #define HIGH_TEMP       NTC100K_R100K_60C
 #define LOW_TEMP        NTC100K_R100K_50C
 
