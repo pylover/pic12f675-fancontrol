@@ -5,7 +5,7 @@
 
 #define FAN GP5
 
-#define DUAL_SENSOR
+//#define DUAL_SENSOR
 #define SAMPLE_INTERVAL     300000
 
 /* 
@@ -16,9 +16,9 @@
 /* 
  * See ntc.h for available values 
  */
-#define RISK_TEMP       NTC50K_R47K_70C
-#define HIGH_TEMP       NTC50K_R47K_50C
-#define LOW_TEMP        NTC50K_R47K_30C
+#define RISK_TEMP       NTC100K_R100K_86C
+#define HIGH_TEMP       NTC100K_R100K_60C
+#define LOW_TEMP        NTC100K_R100K_50C
 
 
 /*
