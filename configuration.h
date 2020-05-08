@@ -25,8 +25,8 @@
  * See ntc.h for available values 
  */
 #define RISK_TEMP       NTC50K_R47K_86C
-#define HIGH_TEMP       NTC50K_R47K_50C
-#define LOW_TEMP        NTC50K_R47K_40C
+#define HIGH_TEMP       NTC50K_R47K_48C
+#define LOW_TEMP        NTC50K_R47K_38C
 
 
 /*
