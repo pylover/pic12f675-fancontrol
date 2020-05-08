@@ -8,8 +8,7 @@ PWM Fan control using PIC12F675
 Checkout https://easyeda.com/vahid.mardani/pic-fan-control for the latest
 versino of the circuit.
 
-![Circuit]
-(https://image.easyeda.com/histories/20dc50475db74383ab9cdc1dbb512f15.png)
+![Circuit](https://image.easyeda.com/histories/20dc50475db74383ab9cdc1dbb512f15.png)
 
 
 ## Compile
